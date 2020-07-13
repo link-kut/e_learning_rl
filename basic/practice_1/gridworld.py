@@ -24,14 +24,14 @@ class GridWorld(gym.Env):
     ):
         self.__version__ = "0.0.1"
 
-        self.observation_space = gym.spaces.MultiDiscrete([height, width])
-        self.action_space = gym.spaces.Discrete(4)
-
         # 그리드월드의 세로 길이
         self.HEIGHT = height
 
         # 그리드월드의 가로 길이
         self.WIDTH = width
+
+        self.observation_space = gym.spaces.MultiDiscrete([self.HEIGHT, self.WIDTH])
+        self.action_space = gym.spaces.Discrete(4)
 
         self.observation_space.STATES = []
         self.observation_space.num_states = self.WIDTH * self.HEIGHT
@@ -48,14 +48,16 @@ class GridWorld(gym.Env):
         self.action_space.ACTION_DOWN = 1
         self.action_space.ACTION_LEFT = 2
         self.action_space.ACTION_RIGHT = 3
-        self.action_space.ACTION_SYMBOLS = ["\u2191", "\u2193", "\u2190", "\u2192"]
+
         self.action_space.ACTIONS = [
             self.action_space.ACTION_UP,
             self.action_space.ACTION_DOWN,
             self.action_space.ACTION_LEFT,
             self.action_space.ACTION_RIGHT
         ]
-        self.action_space.num_actions = len(self.action_space.ACTIONS)
+
+        self.action_space.ACTION_SYMBOLS = ["\u2191", "\u2193", "\u2190", "\u2192"]
+        self.action_space.NUM_ACTIONS = len(self.action_space.ACTIONS)
 
         # 시작 상태 위치
         self.observation_space.START_STATE = start_state
@@ -215,12 +217,25 @@ class GridWorld(gym.Env):
         return gridworld_str
 
 
-if __name__ == "__main__":
+def main():
     env = GridWorld()
     env.reset()
+    env.render()
+
     done = False
+    total_steps = 0
     while not done:
+        total_steps += 1
         action = env.action_space.sample()
         next_state, reward, done, _ = env.step(action)
+        print("action: {0}, reward: {1}, done: {2}, total_steps: {3}".format(
+            env.action_space.ACTION_SYMBOLS[action],
+            reward, done, total_steps
+        ))
         env.render()
-        time.sleep(1)
+
+        time.sleep(3)
+
+
+if __name__ == "__main__":
+    main()
