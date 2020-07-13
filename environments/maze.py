@@ -1,4 +1,8 @@
 # 미로 내 장애물 및 시작 상태, 종료 상태 정보등을 모두 지닌 미로 클래스
+import random
+import time
+
+
 class Maze:
     def __init__(self):
         # 미로의 가로 길이
@@ -37,11 +41,16 @@ class Maze:
         # 최대 타임 스텝
         self.max_steps = float('inf')
 
+        self.current_state = None
+
+    def reset(self):
+        self.current_state = self.START_STATE
+        return self.current_state
 
     # take @action in @state
     # @return: [new state, reward]
-    def step(self, state, action):
-        x, y = state
+    def step(self, action):
+        x, y = self.current_state
         if action == self.ACTION_UP:
             x = max(x - 1, 0)
         elif action == self.ACTION_DOWN:
@@ -52,28 +61,56 @@ class Maze:
             y = min(y + 1, self.MAZE_WIDTH - 1)
 
         if (x, y) in self.obstacles:
-            x, y = state
+            x, y = self.current_state
 
         if (x, y) in self.GOAL_STATES:
             reward = 1.0
         else:
             reward = 0.0
 
-        return reward, (x, y)
+        self.current_state = (x, y)
+
+        if self.current_state in self.GOAL_STATES:
+            done = True
+        else:
+            done = False
+
+        return reward, (x, y), done, None
+
+    def render(self):
+        print(self.__str__())
 
     def __str__(self):
         maze_str = ""
         for i in range(self.MAZE_HEIGHT):
-            maze_str += "-----------------------------------------\n"
+            maze_str += "-------------------------------------------------------------\n"
             out = '| '
             for j in range(self.MAZE_WIDTH):
                 if (i, j) == self.START_STATE:
                     t = "S"
                 elif (i, j) in self.GOAL_STATES:
                     t = "G"
+                elif self.current_state[0] == i and self.current_state[1] == j:
+                    t = "*"
                 else:
                     t = " " if (i, j) not in self.obstacles else "x"
-                out += str("{0}".format(t)) + ' | '
+                out += str(" {0} ".format(t)) + ' | '
             maze_str += out + "\n"
-        maze_str += "-----------------------------------------\n"
+
+            for j in range(self.MAZE_WIDTH):
+                maze_str += "|({0},{1})".format(i, j)
+            maze_str += "\n"
+
+        maze_str += "-------------------------------------------------------------\n"
         return maze_str
+
+
+if __name__ == "__main__":
+    env = Maze()
+    env.reset()
+    done = False
+    while not done:
+        action = random.randint(0, 3)
+        reward, next_state, done, _ = env.step(action)
+        env.render()
+        time.sleep(1)

@@ -214,10 +214,12 @@ class GridWorld(gym.Env):
         gridworld_str += "-------------------------------\n"
         return gridworld_str
 
+
 if __name__ == "__main__":
     env = GridWorld()
     env.reset()
-    while True:
+    done = False
+    while not done:
         action = env.action_space.sample()
         next_state, reward, done, _ = env.step(action)
         env.render()
