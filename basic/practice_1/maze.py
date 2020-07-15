@@ -118,13 +118,14 @@ class Maze(gym.Env):
 def main():
     env = Maze()
     env.reset()
+    print("reset")
     env.render()
 
     done = False
     total_steps = 0
     while not done:
         total_steps += 1
-        action = random.randint(0, 3)
+        action = env.action_space.sample()
         reward, next_state, done, _ = env.step(action)
         print("action: {0}, reward: {1}, done: {2}, total_steps: {3}".format(
             env.action_space.ACTION_SYMBOLS[action],

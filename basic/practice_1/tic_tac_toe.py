@@ -13,6 +13,7 @@ BOARD_COLS = 3
 
 ALL_STATES = {}
 
+
 ################################################################
 # 플레이어 1,2 간의 게임 진행을 담당하는 Env 클래스
 class TicTacToe(gym.Env):
@@ -201,10 +202,8 @@ class State:
 
 def main():
     env = TicTacToe()
-
     print("INITIAL_STATE: {0}".format(env.INITIAL_STATE))
     print("NUMBER OF ALL STATES: {0}".format(len(ALL_STATES)))
-
     state = env.reset()
     env.render()
 

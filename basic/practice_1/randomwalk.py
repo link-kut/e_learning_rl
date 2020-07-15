@@ -10,10 +10,10 @@ import gym
 class RandomWalk(gym.Env):
     def __init__(
             self,
-            num_internal_states=5,
-            transition_reward=0.0,
-            left_terminal_reward=0.0,
-            right_terminal_reward=1.0
+            num_internal_states=5,         # 종료 상태를 제외한 내부 상태 개수
+            transition_reward=0.0,         # 일반적인 상태 전이 보상
+            left_terminal_reward=0.0,      # 왼쪽 종료 상태로 이동하는 행동 수행 시 받는 보상
+            right_terminal_reward=1.0      # 오른쪽 종료 상태로 이동하는 행동 수행 시 받는 보상
     ):
         self.__version__ = "0.0.1"
 
@@ -133,6 +133,7 @@ class RandomWalk(gym.Env):
 def main():
     env = RandomWalk()
     env.reset()
+    print("reset")
     env.render()
 
     done = False

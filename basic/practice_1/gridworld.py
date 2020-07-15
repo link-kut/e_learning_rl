@@ -14,13 +14,13 @@ import gym
 class GridWorld(gym.Env):
     def __init__(
             self,
-            height=5, width=5,
-            start_state=(0, 0),
-            terminal_states=[(4, 4)],
-            transition_reward=0.0,
-            terminal_reward=1.0,
-            outward_reward=-1.0,
-            warm_hole_states=None
+            height=5, width=5,        # 격자판의 크기
+            start_state=(0, 0),       # 시작 상태
+            terminal_states=[(4, 4)], # 종료 상태
+            transition_reward=0.0,    # 일반적인 상태 전이 보상
+            terminal_reward=1.0,      # 종료 상태로 이동하는 행동 수행 시 받는 보상
+            outward_reward=-0.0,      # 미로 바깥으로 이동하는 행동 수행 시 받는 보상 (이동하지 않고 제자리 유지)
+            warm_hole_states=None     # 윔홀 정의
     ):
         self.__version__ = "0.0.1"
 
@@ -65,6 +65,9 @@ class GridWorld(gym.Env):
         # 종료 상태 위치
         self.observation_space.TERMINAL_STATES = terminal_states
 
+        # 웜홀 상태 위치
+        self.observation_space.WARM_HOLE_STATES = warm_hole_states
+
         # 최대 타임 스텝
         self.max_steps = float('inf')
 
@@ -73,7 +76,7 @@ class GridWorld(gym.Env):
         self.terminal_reward = terminal_reward
         self.outward_reward = outward_reward
 
-        self.warm_hole_states = warm_hole_states
+
         self.current_state = None
 
     def reset(self):
@@ -86,8 +89,8 @@ class GridWorld(gym.Env):
     def is_warm_hole_state(self, state):
         i, j = state
 
-        if self.warm_hole_states is not None and len(self.warm_hole_states) > 0:
-            for warm_hole_info in self.warm_hole_states:
+        if self.observation_space.WARM_HOLE_STATES is not None and len(self.observation_space.WARM_HOLE_STATES) > 0:
+            for warm_hole_info in self.observation_space.WARM_HOLE_STATES:
                 warm_hole_state = warm_hole_info[0]
                 if i == warm_hole_state[0] and j == warm_hole_state[1]:
                     return True
@@ -97,7 +100,7 @@ class GridWorld(gym.Env):
         i, j = state
         next_state = None
 
-        for warm_hole_info in self.warm_hole_states:
+        for warm_hole_info in self.observation_space.WARM_HOLE_STATES:
             warm_hole_state = warm_hole_info[0]
             warm_hole_prime_state = warm_hole_info[1]
 
@@ -110,7 +113,7 @@ class GridWorld(gym.Env):
         i, j = state
         reward = None
 
-        for warm_hole_info in self.warm_hole_states:
+        for warm_hole_info in self.observation_space.WARM_HOLE_STATES:
             warm_hole_state = warm_hole_info[0]
             warm_hole_reward = warm_hole_info[2]
 
@@ -198,12 +201,14 @@ class GridWorld(gym.Env):
             gridworld_str += "-------------------------------\n"
 
             for j in range(self.WIDTH):
-                if (i, j) == self.observation_space.START_STATE:
+                if self.current_state[0] == i and self.current_state[1] == j:
+                    gridworld_str += "|  {0}  ".format("*")
+                elif (i, j) == self.observation_space.START_STATE:
                     gridworld_str += "|  {0}  ".format("S")
                 elif (i, j) in self.observation_space.TERMINAL_STATES:
                     gridworld_str += "|  {0}  ".format("G")
-                elif self.current_state[0] == i and self.current_state[1] == j:
-                    gridworld_str += "|  {0}  ".format("*")
+                elif self.observation_space.WARM_HOLE_STATES and (i, j) in [state[0] for state in self.observation_space.WARM_HOLE_STATES]:
+                    gridworld_str += "|  {0}  ".format("W")
                 else:
                     gridworld_str += "|     "
             gridworld_str += "|\n"
@@ -220,6 +225,7 @@ class GridWorld(gym.Env):
 def main():
     env = GridWorld()
     env.reset()
+    print("reset")
     env.render()
 
     done = False
@@ -233,9 +239,41 @@ def main():
             reward, done, total_steps
         ))
         env.render()
+        time.sleep(3)
 
+
+def main_warm_hole():
+    A_POSITION = (0, 1)  # 임의로 지정한 특별한 상태 A 좌표
+    B_POSITION = (0, 3)  # 임의로 지정한 특별한 상태 B 좌표
+
+    A_PRIME_POSITION = (4, 1)  # 상태 A에서 임의의 행동시 도착할 위치 좌표
+    B_PRIME_POSITION = (2, 3)  # 상태 B에서 임의의 행동시 도착할 위치 좌표
+
+    env = GridWorld(
+        warm_hole_states=[
+            (A_POSITION, A_PRIME_POSITION, 10.0),
+            (B_POSITION, B_PRIME_POSITION, 5.0)
+        ]
+    )
+
+    env.reset()
+    print("reset")
+    env.render()
+
+    done = False
+    total_steps = 0
+    while not done:
+        total_steps += 1
+        action = env.action_space.sample()
+        next_state, reward, done, _ = env.step(action)
+        print("action: {0}, reward: {1}, done: {2}, total_steps: {3}".format(
+            env.action_space.ACTION_SYMBOLS[action],
+            reward, done, total_steps
+        ))
+        env.render()
         time.sleep(3)
 
 
 if __name__ == "__main__":
     main()
+    main_warm_hole()
