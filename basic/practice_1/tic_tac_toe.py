@@ -2,7 +2,6 @@ import random
 import time
 
 import gym
-from gym import spaces
 import numpy as np
 
 PLAYER_TO_SYMBOL = ['*', 'O', 'X']

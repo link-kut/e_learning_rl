@@ -1,5 +1,4 @@
 # 미로 내 장애물 및 시작 상태, 종료 상태 정보등을 모두 지닌 미로 클래스
-import random
 import time
 import gym
 
