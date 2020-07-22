@@ -172,9 +172,9 @@ class GridWorld(gym.Env):
         next_i, next_j = self.get_next_state(state, action)
 
         reward = self.get_reward(state, (next_i, next_j))
-        prob = 1.0
+        transition_prob = 1.0
 
-        return (next_i, next_j), reward, prob
+        return (next_i, next_j), reward, transition_prob
 
     # take @action in @state
     # @return: (reward, new state)

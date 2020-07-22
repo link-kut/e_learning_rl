@@ -18,42 +18,8 @@ A_PRIME_POSITION = (4, 1)   # 상태 A에서 행동시 도착할 위치 좌표
 B_PRIME_POSITION = (2, 3)   # 상태 B에서 행동시 도착할 위치 좌표
 
 
-# GRID_WORLD 첫번째 예제
-def grid_world_state_values(env):
-    ACTION_PROBABILITY = 0.25
-    value_function = np.zeros((GRID_HEIGHT, GRID_WIDTH))
-
-    # 가치 함수의 값들이 수렴할 때까지 반복
-    while True:
-        # value_function과 동일한 형태를 가지면서 값은 모두 0인 배열을 new_value_function에 저장
-        new_value_function = np.zeros_like(value_function)
-
-        for i in range(GRID_HEIGHT):
-            for j in range(GRID_WIDTH):
-                values = []
-                # 주어진 상태에서 가능한 모든 행동들의 결과로 다음 상태들을 갱신
-                for action in env.action_space.ACTIONS:
-                    (next_i, next_j), reward, prob = env.get_state_action_probability(state=(i, j), action=action)
-
-                    # Bellman-Equation, 벨만 방정식 적용
-                    values.append(
-                        ACTION_PROBABILITY * prob * (reward + DISCOUNT_RATE * value_function[next_i, next_j])
-                    )
-
-                new_value_function[i, j] = np.sum(values)
-
-        # 가치 함수 수렴 여부 판단
-        if np.sum(np.abs(value_function - new_value_function)) < 1e-4:
-            break
-
-        # 가치 함수 갱신
-        value_function = new_value_function
-
-    return new_value_function
-
-
-# GRID_WORLD 두번째 예제
-def grid_world_optimal_values(env):
+# 그리드 월드에서 최적 상태 가치 산출
+def calculate_grid_world_optimal_values(env):
     value_function = np.zeros((GRID_HEIGHT, GRID_WIDTH))
 
     # 가치 함수의 값들이 수렴할 때까지 반복
@@ -85,38 +51,30 @@ def grid_world_optimal_values(env):
     return new_value_function
 
 def main():
-    value_function = np.zeros((GRID_HEIGHT, GRID_WIDTH))
-    draw_grid_world_image(np.round(value_function, decimals=0), 'images/empty_grid_world.png', GRID_HEIGHT, GRID_WIDTH)
-
     # 5x5 맵 생성
     env = GridWorld(
         height=GRID_HEIGHT,
         width=GRID_WIDTH,
-        start_state=(0, 0),
+        start_state=None,
         terminal_states=[],
         transition_reward=0,
         outward_reward=-1.0,
         warm_hole_states=[(A_POSITION, A_PRIME_POSITION, 10.0), (B_POSITION, B_PRIME_POSITION, 5.0)]
     )
 
-    env.reset()
-    state_values = grid_world_state_values(env)
-    print(state_values)
-    draw_grid_world_image(
-        np.round(state_values, decimals=2), 'images/grid_world_state_values.png', GRID_HEIGHT, GRID_WIDTH
-    )
+    optimal_state_values = calculate_grid_world_optimal_values(env)
 
-    print()
-
-    env.reset()
-    optimal_state_values = grid_world_optimal_values(env)
-    print(optimal_state_values)
     draw_grid_world_image(
         np.round(optimal_state_values, decimals=2), 'images/grid_world_optimal_values.png', GRID_HEIGHT, GRID_WIDTH
     )
+
+    with np.printoptions(precision=2, suppress=True):
+        print(optimal_state_values)
+
 
 # MAIN
 if __name__ == '__main__':
     if not os.path.exists('images/'):
         os.makedirs('images/')
 
+    main()
