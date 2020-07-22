@@ -50,6 +50,7 @@ def calculate_grid_world_optimal_values(env):
 
     return new_value_function
 
+
 def main():
     # 5x5 맵 생성
     env = GridWorld(
