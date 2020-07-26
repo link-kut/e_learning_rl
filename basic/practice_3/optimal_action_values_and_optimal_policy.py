@@ -4,7 +4,7 @@ import os
 from basic.practice_1.gridworld import GridWorld
 
 # 이미지 저장 경로 확인 및 생성
-from utils.util import draw_grid_world_image
+from utils.util import draw_grid_world_action_values_image, draw_grid_world_policy_image
 
 GRID_HEIGHT = 5
 GRID_WIDTH = 5
@@ -73,16 +73,18 @@ def main():
 
     optimal_action_values = calculate_grid_world_optimal_action_values(env)
 
-    with np.printoptions(precision=2, suppress=True):
-        print(optimal_action_values)
+    draw_grid_world_action_values_image(
+        optimal_action_values, 'images/grid_world_optimal_action_values.png',
+        GRID_HEIGHT, GRID_WIDTH, NUM_ACTIONS, env.action_space.ACTION_SYMBOLS
+    )
 
     print()
 
     optimal_policy = calculate_optimal_policy(optimal_action_values)
-    for i in range(GRID_HEIGHT):
-        for j in range(GRID_WIDTH):
-            print("({0}, {1}): {2:10}".format(i, j, str(optimal_policy[(i, j)])), end=" ")
-        print()
+    draw_grid_world_policy_image(
+        optimal_policy, "images/grid_world_optimal_policy.png",
+        GRID_HEIGHT, GRID_WIDTH, env.action_space.ACTION_SYMBOLS
+    )
 
 
 # MAIN

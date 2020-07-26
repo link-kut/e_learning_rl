@@ -15,25 +15,19 @@ def softmax(x):
 
 
 # 학습 이후의 가치함수를 표 형태로 그리는 함수
-def draw_grid_world_image(values, filename, grid_height, grid_width):
-    state_values = np.zeros((grid_height, grid_width))
-    for i in range(grid_height):
-        for j in range(grid_width):
-            state_values[(i, j)] = values[(i, j)]
-
-    state_values = np.round(state_values, decimals=2)
-
+def draw_grid_world_image(state_values, filename, GRID_HEIGHT, GRID_WIDTH):
     # 축 표시 제거, 크기 조절 등 이미지 그리기 이전 설정 작업
     fig, ax = plt.subplots()
     ax.set_axis_off()
     table = Table(ax, bbox=[0, 0, 1, 1])
 
-    nrows, ncols = state_values.shape
+    nrows, ncols = GRID_HEIGHT, GRID_WIDTH
     width, height = 1.0 / ncols, 1.0 / nrows
 
     # 렌더링 할 이미지에 표 셀과 해당 값 추가
-    for (i, j), val in np.ndenumerate(state_values):
-        table.add_cell(i, j, width, height, text=val, loc='center', facecolor='white')
+    for i in range(GRID_HEIGHT):
+        for j in range(GRID_WIDTH):
+            table.add_cell(i, j, width, height, text=state_values[i][j], loc='center', facecolor='white')
 
     # 행, 열 라벨 추가
     for i in range(len(state_values)):
@@ -49,14 +43,82 @@ def draw_grid_world_image(values, filename, grid_height, grid_width):
     plt.close()
 
 
-def print_grid_world_policy(env, policy):
-    with np.printoptions(precision=2, suppress=True):
-        for i in range(env.HEIGHT):
-            for j in range(env.WIDTH):
-                if (i, j) not in env.observation_space.TERMINAL_STATES:
-                    print(
-                        "({0}, {1}): UP, DOWN, LEFT, RIGHT".format(i, j),
-                        policy[(i, j)][1],
-                        env.action_space.ACTION_SYMBOLS[np.argmax(policy[(i, j)][1])]
-                    )
-            print()
+def draw_grid_world_action_values_image(action_values, filename, GRID_HEIGHT, GRID_WIDTH, NUM_ACTIONS, ACTION_SYMBOLS):
+    action_str_values = []
+    for i in range(GRID_HEIGHT):
+        action_str_values.append([])
+        for j in range(GRID_WIDTH):
+            str_values = []
+            for action in range(NUM_ACTIONS):
+                str_values.append("{0} ({1}): {2:.2f}".format(ACTION_SYMBOLS[action], action, action_values[i, j, action]))
+            action_str_values[i].append("\n".join(str_values))
+
+    # 축 표시 제거, 크기 조절 등 이미지 그리기 이전 설정 작업
+    fig, ax = plt.subplots()
+    ax.set_axis_off()
+    table = Table(ax, bbox=[0, 0, 1, 1])
+
+    nrows, ncols = GRID_HEIGHT, GRID_WIDTH
+    width, height = 1.0 / ncols, 1.0 / nrows
+
+    # 렌더링 할 이미지에 표 셀과 해당 값 추가
+    for i in range(GRID_HEIGHT):
+        for j in range(GRID_WIDTH):
+            table.add_cell(i, j, width, height, text=action_str_values[i][j], loc='center', facecolor='white')
+
+    # 행, 열 라벨 추가
+    for i in range(len(action_str_values)):
+        table.add_cell(i, -1, width, height, text=i+1, loc='right', edgecolor='none', facecolor='none')
+        table.add_cell(-1, i, width, height/2, text=i+1, loc='center', edgecolor='none', facecolor='none')
+
+    for key, cell in table.get_celld().items():
+         cell.get_text().set_fontsize(10)
+
+    ax.add_table(table)
+
+    plt.savefig(filename)
+    plt.close()
+
+
+def draw_grid_world_policy_image(policy, filename, GRID_HEIGHT, GRID_WIDTH, ACTION_SYMBOLS, TERMINAL_STATES=None):
+    action_str_values = []
+    for i in range(GRID_HEIGHT):
+        action_str_values.append([])
+        for j in range(GRID_WIDTH):
+            if TERMINAL_STATES and (i, j) in TERMINAL_STATES:
+                continue
+            str_values = []
+            for action in policy[(i, j)]:
+                str_values.append("{0} ({1})".format(ACTION_SYMBOLS[action], action))
+            action_str_values[i].append("\n".join(str_values))
+
+    print(action_str_values)
+
+    # 축 표시 제거, 크기 조절 등 이미지 그리기 이전 설정 작업
+    fig, ax = plt.subplots()
+    ax.set_axis_off()
+    table = Table(ax, bbox=[0, 0, 1, 1])
+
+    nrows, ncols = GRID_HEIGHT, GRID_WIDTH
+    width, height = 1.0 / ncols, 1.0 / nrows
+
+    # 렌더링 할 이미지에 표 셀과 해당 값 추가
+    for i in range(GRID_HEIGHT):
+        for j in range(GRID_WIDTH):
+            if TERMINAL_STATES and (i, j) in TERMINAL_STATES:
+                continue
+            table.add_cell(i, j, width, height, text=action_str_values[i][j], loc='center', facecolor='white')
+
+    # 행, 열 라벨 추가
+    for i in range(len(action_str_values)):
+        table.add_cell(i, -1, width, height, text=i+1, loc='right', edgecolor='none', facecolor='none')
+        table.add_cell(-1, i, width, height/2, text=i+1, loc='center', edgecolor='none', facecolor='none')
+
+    for key, cell in table.get_celld().items():
+         cell.get_text().set_fontsize(10)
+
+    ax.add_table(table)
+
+    plt.savefig(filename)
+    plt.close()
+
