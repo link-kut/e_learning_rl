@@ -19,7 +19,7 @@ B_PRIME_POSITION = (2, 3)   # 상태 B에서 행동시 도착할 위치 좌표
 
 
 # 그리드 월드에서 최적 상태 가치 산출
-def calculate_grid_world_optimal_values(env):
+def calculate_grid_world_optimal_state_values(env):
     value_function = np.zeros((GRID_HEIGHT, GRID_WIDTH))
 
     # 가치 함수의 값들이 수렴할 때까지 반복
@@ -30,7 +30,7 @@ def calculate_grid_world_optimal_values(env):
         for i in range(GRID_HEIGHT):
             for j in range(GRID_WIDTH):
                 values = []
-                # 주어진 상태에서 가능한 모든 행동들의 결과로 다음 상태들을 갱신
+                # 주어진 상태에서 가능한 모든 행동들의 결과로 다음 상태 및 보상 정보 갱신
                 for action in env.action_space.ACTIONS:
                     (next_i, next_j), reward, prob = env.get_state_action_probability(state=(i, j), action=action)
 
@@ -63,10 +63,10 @@ def main():
         warm_hole_states=[(A_POSITION, A_PRIME_POSITION, 10.0), (B_POSITION, B_PRIME_POSITION, 5.0)]
     )
 
-    optimal_state_values = calculate_grid_world_optimal_values(env)
+    optimal_state_values = calculate_grid_world_optimal_state_values(env)
 
     draw_grid_world_image(
-        np.round(optimal_state_values, decimals=2), 'images/grid_world_optimal_values.png', GRID_HEIGHT, GRID_WIDTH
+        np.round(optimal_state_values, decimals=2), 'images/grid_world_optimal_state_values.png', GRID_HEIGHT, GRID_WIDTH
     )
 
     with np.printoptions(precision=2, suppress=True):
