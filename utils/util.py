@@ -92,8 +92,6 @@ def draw_grid_world_policy_image(policy, filename, GRID_HEIGHT, GRID_WIDTH, ACTI
                 str_values.append("{0} ({1})".format(ACTION_SYMBOLS[action], action))
             action_str_values[i].append("\n".join(str_values))
 
-    print(action_str_values)
-
     # 축 표시 제거, 크기 조절 등 이미지 그리기 이전 설정 작업
     fig, ax = plt.subplots()
     ax.set_axis_off()

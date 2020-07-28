@@ -1,139 +1,197 @@
-# 미로 내 장애물 및 시작 상태, 종료 상태 정보등을 모두 지닌 미로 클래스
-import time
+import sys
+import numpy as np
+import math
+import random
+
 import gym
+import basic.practice_1.gym_maze
 
+def simulate():
+    # Instantiating the learning related parameters
+    learning_rate = get_learning_rate(0)
+    explore_rate = get_explore_rate(0)
+    discount_factor = 0.99
 
-class Maze(gym.Env):
-    def __init__(self):
-        # 미로의 가로 길이
-        self.MAZE_WIDTH = 10
+    num_streaks = 0
 
-        # 미로의 세로 길이
-        self.MAZE_HEIGHT = 6
-
-        self.observation_space = gym.spaces.MultiDiscrete([self.MAZE_HEIGHT, self.MAZE_WIDTH])
-        self.action_space = gym.spaces.Discrete(4)
-
-        # 모든 가능한 행동
-        self.action_space.ACTION_UP = 0
-        self.action_space.ACTION_DOWN = 1
-        self.action_space.ACTION_LEFT = 2
-        self.action_space.ACTION_RIGHT = 3
-        self.action_space.ACTIONS = [
-            self.action_space.ACTION_UP,
-            self.action_space.ACTION_DOWN,
-            self.action_space.ACTION_LEFT,
-            self.action_space.ACTION_RIGHT
-        ]
-        self.action_space.ACTION_SYMBOLS = ["\u2191", "\u2193", "\u2190", "\u2192"]
-        self.action_space.NUM_ACTIONS = len(self.action_space.ACTIONS)
-
-        # 시작 상태 위치
-        self.observation_space.START_STATE = (2, 1)
-
-        # 종료 상태 위치
-        self.observation_space.GOAL_STATES = [(5, 9)]
-
-        # 장애물들의 위치
-        self.observation_space.OBSTACLES = [
-            (0, 7), (0, 8),
-            (1, 4), (1, 5),
-            (2, 2), (2, 4), (2, 5), (2, 8),
-            (3, 2), (3, 8),
-            (4, 2), (4, 7), (4, 8),
-            (5, 7), (5, 8)
-        ]
-
-        # Q 가치의 크기
-        self.q_size = (self.MAZE_HEIGHT, self.MAZE_WIDTH, len(self.action_space.ACTIONS))
-
-        # 최대 타임 스텝
-        self.max_steps = float('inf')
-
-        self.current_state = None
-
-    def reset(self):
-        self.current_state = self.observation_space.START_STATE
-        return self.current_state
-
-    # take @action in @state
-    # @return: [new state, reward]
-    def step(self, action):
-        x, y = self.current_state
-        if action == self.action_space.ACTION_UP:
-            x = max(x - 1, 0)
-        elif action == self.action_space.ACTION_DOWN:
-            x = min(x + 1, self.MAZE_HEIGHT - 1)
-        elif action == self.action_space.ACTION_LEFT:
-            y = max(y - 1, 0)
-        elif action == self.action_space.ACTION_RIGHT:
-            y = min(y + 1, self.MAZE_WIDTH - 1)
-
-        if (x, y) in self.observation_space.OBSTACLES:
-            x, y = self.current_state
-
-        if (x, y) in self.observation_space.GOAL_STATES:
-            reward = 1.0
-        else:
-            reward = 0.0
-
-        self.current_state = (x, y)
-
-        if self.current_state in self.observation_space.GOAL_STATES:
-            done = True
-        else:
-            done = False
-
-        return reward, (x, y), done, None
-
-    def render(self):
-        print(self.__str__())
-
-    def __str__(self):
-        maze_str = ""
-        for i in range(self.MAZE_HEIGHT):
-            maze_str += "-------------------------------------------------------------\n"
-            out = '| '
-            for j in range(self.MAZE_WIDTH):
-                if (i, j) == self.observation_space.START_STATE:
-                    t = "S"
-                elif (i, j) in self.observation_space.GOAL_STATES:
-                    t = "G"
-                elif self.current_state[0] == i and self.current_state[1] == j:
-                    t = "*"
-                else:
-                    t = " " if (i, j) not in self.observation_space.OBSTACLES else "x"
-                out += str(" {0} ".format(t)) + ' | '
-            maze_str += out + "\n"
-
-            for j in range(self.MAZE_WIDTH):
-                maze_str += "|({0},{1})".format(i, j)
-            maze_str += "\n"
-
-        maze_str += "-------------------------------------------------------------\n"
-        return maze_str
-
-
-def main():
-    env = Maze()
-    env.reset()
-    print("reset")
+    # Render tha maze
     env.render()
 
-    done = False
-    total_steps = 0
-    while not done:
-        total_steps += 1
-        action = env.action_space.sample()
-        reward, next_state, done, _ = env.step(action)
-        print("action: {0}, reward: {1}, done: {2}, total_steps: {3}".format(
-            env.action_space.ACTION_SYMBOLS[action],
-            reward, done, total_steps
-        ))
-        env.render()
+    for episode in range(NUM_EPISODES):
 
-        time.sleep(3)
+        # Reset the environment
+        obv = env.reset()
+
+        # the initial state
+        state_0 = state_to_bucket(obv)
+        total_reward = 0
+
+        for t in range(MAX_T):
+
+            # Select an action
+            action = select_action(state_0, explore_rate)
+
+            # execute the action
+            obv, reward, done, _ = env.step(action)
+
+            # Observe the result
+            state = state_to_bucket(obv)
+            total_reward += reward
+
+            # Update the Q based on the result
+            best_q = np.amax(q_table[state])
+            q_table[state_0 + (action,)] += learning_rate * (reward + discount_factor * (best_q) - q_table[state_0 + (action,)])
+
+            # Setting up for the next iteration
+            state_0 = state
+
+            # Print data
+            if DEBUG_MODE == 2:
+                print("\nEpisode = %d" % episode)
+                print("t = %d" % t)
+                print("Action: %d" % action)
+                print("State: %s" % str(state))
+                print("Reward: %f" % reward)
+                print("Best Q: %f" % best_q)
+                print("Explore rate: %f" % explore_rate)
+                print("Learning rate: %f" % learning_rate)
+                print("Streaks: %d" % num_streaks)
+                print("")
+
+            elif DEBUG_MODE == 1:
+                if done or t >= MAX_T - 1:
+                    print("\nEpisode = %d" % episode)
+                    print("t = %d" % t)
+                    print("Explore rate: %f" % explore_rate)
+                    print("Learning rate: %f" % learning_rate)
+                    print("Streaks: %d" % num_streaks)
+                    print("Total reward: %f" % total_reward)
+                    print("")
+
+            # Render tha maze
+            if RENDER_MAZE:
+                env.render()
+
+            if env.is_game_over():
+                sys.exit()
+
+            if done:
+                print("Episode %d finished after %f time steps with total reward = %f (streak %d)."
+                      % (episode, t, total_reward, num_streaks))
+
+                if t <= SOLVED_T:
+                    num_streaks += 1
+                else:
+                    num_streaks = 0
+                break
+
+            elif t >= MAX_T - 1:
+                print("Episode %d timed out at %d with total reward = %f."
+                      % (episode, t, total_reward))
+
+        # It's considered done when it's solved over 120 times consecutively
+        if num_streaks > STREAK_TO_END:
+            break
+
+        # Update parameters
+        explore_rate = get_explore_rate(episode)
+        learning_rate = get_learning_rate(episode)
+
+
+def select_action(state, explore_rate):
+    # Select a random action
+    if random.random() < explore_rate:
+        action = env.action_space.sample()
+    # Select the action with the highest q
+    else:
+        action = int(np.argmax(q_table[state]))
+    return action
+
+
+def get_explore_rate(t):
+    return max(MIN_EXPLORE_RATE, min(0.8, 1.0 - math.log10((t+1)/DECAY_FACTOR)))
+
+
+def get_learning_rate(t):
+    return max(MIN_LEARNING_RATE, min(0.8, 1.0 - math.log10((t+1)/DECAY_FACTOR)))
+
+
+def state_to_bucket(state):
+    bucket_indice = []
+    for i in range(len(state)):
+        if state[i] <= STATE_BOUNDS[i][0]:
+            bucket_index = 0
+        elif state[i] >= STATE_BOUNDS[i][1]:
+            bucket_index = NUM_BUCKETS[i] - 1
+        else:
+            # Mapping the state bounds to the bucket array
+            bound_width = STATE_BOUNDS[i][1] - STATE_BOUNDS[i][0]
+            offset = (NUM_BUCKETS[i]-1)*STATE_BOUNDS[i][0]/bound_width
+            scaling = (NUM_BUCKETS[i]-1)/bound_width
+            bucket_index = int(round(scaling*state[i] - offset))
+        bucket_indice.append(bucket_index)
+    return tuple(bucket_indice)
 
 
 if __name__ == "__main__":
-    main()
+    # Initialize the "maze" environment
+    # env = gym.make("maze-v0")
+
+    ############ Pre-generated mazes (same maze every run)
+    # env = gym.make("maze-sample-3x3-v0")
+    # env = gym.make("maze-sample-5x5-v0")
+    # env = gym.make("maze-sample-10x10-v0")
+    # env = gym.make("maze-sample-100x100-v0")
+
+    ############ Randomly generated mazes (same maze every epoch, but different one every run)
+    # env = gym.make("maze-random-3x3-v0")
+    # env = gym.make("maze-random-5x5-v0")
+    # env = gym.make("maze-random-10x10-v0")
+    # env = gym.make("maze-random-100x100-v0")
+
+    ############ Randomly generated mazes with portals and loops
+    ############ With loops, it means that there will be more than one possible path.
+    ############ The agent can also teleport from a portal to another portal of the same colour.
+    # env = gym.make("maze-random-10x10-plus-v0")
+    env = gym.make("maze-random-20x20-plus-v0")
+    # env = gym.make("maze-random-30x30-plus-v0")
+
+    '''
+    Defining the environment related constants
+    '''
+    # Number of discrete states (bucket) per state dimension
+    MAZE_SIZE = tuple((env.observation_space.high + np.ones(env.observation_space.shape)).astype(int))
+    NUM_BUCKETS = MAZE_SIZE  # one bucket per grid
+
+    # Number of discrete actions
+    NUM_ACTIONS = env.action_space.n  # ["N", "S", "E", "W"]
+    # Bounds for each discrete state
+    STATE_BOUNDS = list(zip(env.observation_space.low, env.observation_space.high))
+
+    '''
+    Learning related constants
+    '''
+    MIN_EXPLORE_RATE = 0.001
+    MIN_LEARNING_RATE = 0.2
+    DECAY_FACTOR = np.prod(MAZE_SIZE, dtype=float) / 10.0
+
+    '''
+    Defining the simulation related constants
+    '''
+    NUM_EPISODES = 50000
+    MAX_T = np.prod(MAZE_SIZE, dtype=int) * 100
+    STREAK_TO_END = 100
+    SOLVED_T = np.prod(MAZE_SIZE, dtype=int)
+    DEBUG_MODE = 0
+    RENDER_MAZE = True
+
+    '''
+    Creating a Q-Table for each state-action pair
+    '''
+    q_table = np.zeros(NUM_BUCKETS + (NUM_ACTIONS,), dtype=float)
+
+    '''
+    Begin simulation
+    '''
+
+    simulate()
